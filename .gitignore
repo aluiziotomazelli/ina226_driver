@@ -1,0 +1,20 @@
+# Build files
+build/
+sdkconfig
+sdkconfig.old
+dependencies.lock
+
+# Host tests
+host_test/**/build/
+host_test/**/coverage/
+host_test/**/.cache/
+
+# IDE files
+.vscode/
+.cache/
+.clangd/
+*.code-workspace
+
+#secrets
+**/secrets.h
+**/secrets.hpp

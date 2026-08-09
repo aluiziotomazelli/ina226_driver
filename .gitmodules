@@ -1,0 +1,4 @@
+[submodule "external/idf_hals"]
+	path = external/idf_hals
+	url = https://github.com/aluiziotomazelli/idf_hals.git
+	branch = main
