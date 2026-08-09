@@ -5,7 +5,7 @@ project(ina226_driver_host_tests NONE)
 include(CTest)
 
 # Define the tests for CTest.
-add_test(NAME test_ina226_driver COMMAND ../test_time_manager/build/test_time_manager.elf)
+add_test(NAME test_ina226_driver COMMAND ../test_ina226_driver/build/test_ina226_driver.elf)
 
 # Unified Coverage Configuration
 find_program(LCOV_PATH lcov REQUIRED)
