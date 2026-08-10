@@ -8,6 +8,7 @@ idf_component_register(
         "include/interfaces"
     REQUIRES 
         idf_hals
+        esp_driver_i2c
 )
 
 if(IDF_TARGET STREQUAL "linux")

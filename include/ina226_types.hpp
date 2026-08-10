@@ -42,6 +42,21 @@ enum class AveragingMode : uint16_t
     AVG_1024 = 0b111
 };
 
+constexpr uint16_t averaging_mode_to_count(AveragingMode mode)
+{
+    switch (mode) {
+    case AveragingMode::AVG_1: return 1;
+    case AveragingMode::AVG_4: return 4;
+    case AveragingMode::AVG_16: return 16;
+    case AveragingMode::AVG_64: return 64;
+    case AveragingMode::AVG_128: return 128;
+    case AveragingMode::AVG_256: return 256;
+    case AveragingMode::AVG_512: return 512;
+    case AveragingMode::AVG_1024: return 1024;
+    default: return 1;
+    }
+}
+
 /**
  * @enum ConversionTime
  * @brief Conversion time for VBUS or VSHUNT.
@@ -57,6 +72,21 @@ enum class ConversionTime : uint16_t
     CT_4156US = 0b110,
     CT_8244US = 0b111
 };
+
+constexpr uint32_t conversion_time_to_us(ConversionTime ct)
+{
+    switch (ct) {
+    case ConversionTime::CT_140US: return 140;
+    case ConversionTime::CT_204US: return 204;
+    case ConversionTime::CT_332US: return 332;
+    case ConversionTime::CT_588US: return 588;
+    case ConversionTime::CT_1100US: return 1100;
+    case ConversionTime::CT_2116US: return 2116;
+    case ConversionTime::CT_4156US: return 4156;
+    case ConversionTime::CT_8244US: return 8244;
+    default: return 1100;
+    }
+}
 
 /**
  * @enum OperatingMode

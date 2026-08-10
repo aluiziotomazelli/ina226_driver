@@ -4,7 +4,8 @@
 namespace ina226 {
 
 Ina226Driver::Ina226Driver(idf_hals::II2cHAL& i2c_hal, const Ina226Config& config)
-    : i2c_hal_(i2c_hal), config_(config)
+    : i2c_hal_(i2c_hal)
+    , config_(config)
 {
 }
 
@@ -199,10 +200,7 @@ esp_err_t Ina226Driver::write_register(Register reg, uint16_t val)
     }
 
     uint8_t write_buf[3] = {
-        static_cast<uint8_t>(reg),
-        static_cast<uint8_t>((val >> 8) & 0xFF),
-        static_cast<uint8_t>(val & 0xFF)
-    };
+        static_cast<uint8_t>(reg), static_cast<uint8_t>((val >> 8) & 0xFF), static_cast<uint8_t>(val & 0xFF)};
 
     return i2c_hal_.master_transmit(dev_handle_, write_buf, 3, 100);
 }

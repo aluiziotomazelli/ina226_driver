@@ -26,7 +26,7 @@ public:
      * @param bus_handle Initialized I2C master bus handle.
      * @return ESP_OK on success.
      */
-    esp_err_t init(i2c_master_bus_handle_t bus_handle);
+    esp_err_t init(i2c_master_bus_handle_t bus_handle) override;
 
     /** @copydoc IIna226Driver::init() */
     esp_err_t init() override;

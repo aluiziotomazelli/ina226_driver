@@ -1,6 +1,7 @@
 #pragma once
 
 #include "esp_err.h"
+#include "driver/i2c_master.h"
 #include "ina226_types.hpp"
 
 namespace ina226 {
@@ -15,6 +16,14 @@ class IIna226Driver
 {
 public:
     virtual ~IIna226Driver() = default;
+
+    /**
+     * @brief Registers the INA226 device on the provided I2C master bus.
+     *        Must be called before init().
+     * @param bus_handle Initialized I2C master bus handle.
+     * @return ESP_OK on success, or ESP_ERR_* on failure.
+     */
+    virtual esp_err_t init(i2c_master_bus_handle_t bus_handle) = 0;
 
     /**
      * @brief Initializes the INA226 hardware, verifies chip ID and writes configuration.
