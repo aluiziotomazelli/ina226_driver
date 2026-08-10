@@ -13,7 +13,7 @@ static const char* TAG = "INA226_EXAMPLE";
 
 static constexpr gpio_num_t I2C_SDA_GPIO = GPIO_NUM_6;   // D4 on XIAO ESP32C3
 static constexpr gpio_num_t I2C_SCL_GPIO = GPIO_NUM_7;   // D5 on XIAO ESP32C3
-static constexpr gpio_num_t INA_ALERT_GPIO = GPIO_NUM_4; // D10 on XIAO ESP32C3
+static constexpr gpio_num_t INA_ALERT_GPIO = GPIO_NUM_4; // D2 on XIAO ESP32C3
 
 /**
  * @brief Shunt Over Voltage raw threshold
@@ -45,36 +45,30 @@ ina226::Ina226Driver driver(i2c_hal, config);
 
 void enter_deep_sleep()
 {
+    esp_err_t err = esp_deep_sleep_enable_gpio_wakeup((1ULL << INA_ALERT_GPIO), ESP_GPIO_WAKEUP_GPIO_LOW);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to enable deep gpio wakeup: %s", esp_err_to_name(err));
+    }
     // 1. Configure conversion time & mode for sleep monitor
     ina226::Ina226Config sleep_config = config;
-    sleep_config.avg_mode = ina226::AveragingMode::AVG_16;
+    sleep_config.avg_mode = ina226::AveragingMode::AVG_1024;
     sleep_config.vbus_ct = ina226::ConversionTime::CT_8244US;
     sleep_config.vsh_ct = ina226::ConversionTime::CT_8244US;
     sleep_config.mode = ina226::OperatingMode::SHUNT_AND_BUS_CONTINUOUS;
 
     driver.set_config(sleep_config);
 
-    // 2. Enable Shunt Over Voltage alert with Latch Enable so ALERT stays LOW until read
-    uint16_t alert_mask = static_cast<uint16_t>(ina226::AlertFlag::SHUNT_OVER_VOLTAGE) |
-                          static_cast<uint16_t>(ina226::AlertFlag::LATCH_ENABLE);
+    // 2. Enable Shunt Over Voltage alert without Latch Enable (transparent mode)
+    uint16_t alert_mask = static_cast<uint16_t>(ina226::AlertFlag::SHUNT_OVER_VOLTAGE);
     driver.configure_alert(alert_mask, WAKEUP_RAW_ALERT_LIMIT);
-
-    // 3. Clear any existing pending alert flag by reading MASK_ENABLE register so ALERT pin goes HIGH
-    uint16_t mask_enable_val = 0;
-    driver.read_register(ina226::Register::MASK_ENABLE, mask_enable_val);
 
     ESP_LOGI(
         TAG, "Entering deep sleep (Wakeup limit: %u LSBs / %.2f mA)...", WAKEUP_RAW_ALERT_LIMIT, WAKEUP_CURRENT_MA);
-    vTaskDelay(pdMS_TO_TICKS(100)); // Allow UART log output to flush
 
-    esp_err_t err = esp_deep_sleep_enable_gpio_wakeup((1ULL << INA_ALERT_GPIO), ESP_GPIO_WAKEUP_GPIO_LOW);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to enable deep gpio wakeup: %s", esp_err_to_name(err));
+    if (err == ESP_OK) {
+        esp_deep_sleep_start();
     }
-
-    esp_deep_sleep_start();
 }
-
 
 extern "C" void app_main(void)
 {
