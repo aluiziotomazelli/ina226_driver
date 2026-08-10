@@ -66,6 +66,13 @@ public:
     virtual esp_err_t read_power_mw(float& out_mw) = 0;
 
     /**
+     * @brief Sets the INA226 configuration.
+     * @param new_config New configuration to apply.
+     * @return ESP_OK on success.
+     */
+    virtual esp_err_t set_config(const Ina226Config& new_config) = 0;
+
+    /**
      * @brief Calibrates the current calculation register.
      * @param r_shunt_ohms Shunt resistance value in Ohms.
      * @param max_expected_current_a Maximum expected current in Amperes.

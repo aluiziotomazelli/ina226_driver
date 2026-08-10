@@ -46,6 +46,9 @@ public:
     /** @copydoc IIna226Driver::read_power_mw(float&) */
     esp_err_t read_power_mw(float& out_mw) override;
 
+    /** @copydoc IIna226Driver::set_config() */
+    esp_err_t set_config(const Ina226Config& config) override;
+
     /** @copydoc IIna226Driver::calibrate() */
     esp_err_t calibrate(float r_shunt_ohms, float max_expected_current_a) override;
 

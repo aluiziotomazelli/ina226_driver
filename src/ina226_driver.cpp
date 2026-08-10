@@ -71,20 +71,10 @@ esp_err_t Ina226Driver::reset()
     return apply_config();
 }
 
-esp_err_t Ina226Driver::apply_config()
+esp_err_t Ina226Driver::set_config(const Ina226Config& new_config)
 {
-    uint16_t config_val = 0;
-    config_val |= (static_cast<uint16_t>(config_.avg_mode) & 0x07) << 9;
-    config_val |= (static_cast<uint16_t>(config_.vbus_ct) & 0x07) << 6;
-    config_val |= (static_cast<uint16_t>(config_.vsh_ct) & 0x07) << 3;
-    config_val |= (static_cast<uint16_t>(config_.mode) & 0x07);
-
-    esp_err_t err = write_register(Register::CONFIG, config_val);
-    if (err != ESP_OK) {
-        return err;
-    }
-
-    return calibrate(config_.r_shunt_ohms, config_.max_expected_current_a);
+    config_ = new_config;
+    return apply_config();
 }
 
 esp_err_t Ina226Driver::calibrate(float r_shunt_ohms, float max_expected_current_a)
@@ -203,6 +193,25 @@ esp_err_t Ina226Driver::write_register(Register reg, uint16_t val)
         static_cast<uint8_t>(reg), static_cast<uint8_t>((val >> 8) & 0xFF), static_cast<uint8_t>(val & 0xFF)};
 
     return i2c_hal_.master_transmit(dev_handle_, write_buf, 3, 100);
+}
+
+// ==================================================================
+// Private
+// ==================================================================
+esp_err_t Ina226Driver::apply_config()
+{
+    uint16_t config_val = 0;
+    config_val |= (static_cast<uint16_t>(config_.avg_mode) & 0x07) << 9;
+    config_val |= (static_cast<uint16_t>(config_.vbus_ct) & 0x07) << 6;
+    config_val |= (static_cast<uint16_t>(config_.vsh_ct) & 0x07) << 3;
+    config_val |= (static_cast<uint16_t>(config_.mode) & 0x07);
+
+    esp_err_t err = write_register(Register::CONFIG, config_val);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    return calibrate(config_.r_shunt_ohms, config_.max_expected_current_a);
 }
 
 } // namespace ina226
