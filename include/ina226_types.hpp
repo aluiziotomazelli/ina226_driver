@@ -45,15 +45,24 @@ enum class AveragingMode : uint16_t
 constexpr uint16_t averaging_mode_to_count(AveragingMode mode)
 {
     switch (mode) {
-    case AveragingMode::AVG_1: return 1;
-    case AveragingMode::AVG_4: return 4;
-    case AveragingMode::AVG_16: return 16;
-    case AveragingMode::AVG_64: return 64;
-    case AveragingMode::AVG_128: return 128;
-    case AveragingMode::AVG_256: return 256;
-    case AveragingMode::AVG_512: return 512;
-    case AveragingMode::AVG_1024: return 1024;
-    default: return 1;
+    case AveragingMode::AVG_1:
+        return 1;
+    case AveragingMode::AVG_4:
+        return 4;
+    case AveragingMode::AVG_16:
+        return 16;
+    case AveragingMode::AVG_64:
+        return 64;
+    case AveragingMode::AVG_128:
+        return 128;
+    case AveragingMode::AVG_256:
+        return 256;
+    case AveragingMode::AVG_512:
+        return 512;
+    case AveragingMode::AVG_1024:
+        return 1024;
+    default:
+        return 1;
     }
 }
 
@@ -76,15 +85,24 @@ enum class ConversionTime : uint16_t
 constexpr uint32_t conversion_time_to_us(ConversionTime ct)
 {
     switch (ct) {
-    case ConversionTime::CT_140US: return 140;
-    case ConversionTime::CT_204US: return 204;
-    case ConversionTime::CT_332US: return 332;
-    case ConversionTime::CT_588US: return 588;
-    case ConversionTime::CT_1100US: return 1100;
-    case ConversionTime::CT_2116US: return 2116;
-    case ConversionTime::CT_4156US: return 4156;
-    case ConversionTime::CT_8244US: return 8244;
-    default: return 1100;
+    case ConversionTime::CT_140US:
+        return 140;
+    case ConversionTime::CT_204US:
+        return 204;
+    case ConversionTime::CT_332US:
+        return 332;
+    case ConversionTime::CT_588US:
+        return 588;
+    case ConversionTime::CT_1100US:
+        return 1100;
+    case ConversionTime::CT_2116US:
+        return 2116;
+    case ConversionTime::CT_4156US:
+        return 4156;
+    case ConversionTime::CT_8244US:
+        return 8244;
+    default:
+        return 1100;
     }
 }
 
@@ -110,15 +128,16 @@ enum class OperatingMode : uint16_t
  */
 enum class AlertFlag : uint16_t
 {
-    SHUNT_OVER_VOLTAGE = (1 << 15),
-    SHUNT_UNDER_VOLTAGE = (1 << 14),
-    BUS_OVER_VOLTAGE = (1 << 13),
-    BUS_UNDER_VOLTAGE = (1 << 12),
-    POWER_OVER_LIMIT = (1 << 11),
-    CONVERSION_READY = (1 << 10),
-    ALERT_FUNCTION_FLAG = (1 << 4),
-    ALERT_POLARITY_HIGH = (1 << 1),
-    LATCH_ENABLE = (1 << 0)
+    SHUNT_OVER_VOLTAGE = (1 << 15),        ///< SOL: Shunt Voltage Over-Voltage
+    SHUNT_UNDER_VOLTAGE = (1 << 14),       ///< SUL: Shunt Voltage Under-Voltage
+    BUS_OVER_VOLTAGE = (1 << 13),          ///< BOL: Bus Voltage Over-Voltage
+    BUS_UNDER_VOLTAGE = (1 << 12),         ///< BUL: Bus Voltage Under-Voltage
+    POWER_OVER_LIMIT = (1 << 11),          ///< POL: Power Over-Limit
+    ALERT_ON_CONVERSION_READY = (1 << 10), ///< CNVR: assert Alert pin when a conversion completes
+    ALERT_FUNCTION_FLAG = (1 << 4),        ///< AFF: Alert Function Flag
+    CONVERSION_READY = (1 << 3),           ///< CVRF: conversion-ready status flag
+    ALERT_POLARITY_HIGH = (1 << 1), ///< APOL: Alert polarity; 1 = inverted (active-high), 0 = normal (active-low)
+    LATCH_ENABLE = (1 << 0)         ///< LEN: Alert latch enable
 };
 
 /**
@@ -128,8 +147,8 @@ enum class AlertFlag : uint16_t
 struct Ina226Config
 {
     uint8_t i2c_addr = DEFAULT_I2C_ADDR;
-    float r_shunt_ohms = 0.1f;                  ///< Shunt resistor value in Ohms (e.g. 0.1 for R100)
-    float max_expected_current_a = 0.8192f;     ///< Max expected current in Amperes
+    float r_shunt_ohms = 0.1f;              ///< Shunt resistor value in Ohms (e.g. 0.1 for R100)
+    float max_expected_current_a = 0.8192f; ///< Max expected current in Amperes
     AveragingMode avg_mode = AveragingMode::AVG_16;
     ConversionTime vbus_ct = ConversionTime::CT_1100US;
     ConversionTime vsh_ct = ConversionTime::CT_1100US;

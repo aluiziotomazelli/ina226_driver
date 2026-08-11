@@ -153,15 +153,24 @@ TEST_F(Ina226DriverTest, ConfigureAlertAndCheckConversionReady)
         .WillOnce(Invoke([](i2c_master_dev_handle_t, const uint8_t* write_buf, size_t, int) {
             EXPECT_EQ(write_buf[0], static_cast<uint8_t>(ina226::Register::MASK_ENABLE));
             uint16_t mask = (write_buf[1] << 8) | write_buf[2];
-            EXPECT_EQ(mask, static_cast<uint16_t>(ina226::AlertFlag::CONVERSION_READY));
+            EXPECT_EQ(mask, static_cast<uint16_t>(ina226::AlertFlag::ALERT_ON_CONVERSION_READY));
             return ESP_OK;
         }));
 
-    EXPECT_EQ(driver->configure_alert(static_cast<uint16_t>(ina226::AlertFlag::CONVERSION_READY), 0), ESP_OK);
+    EXPECT_EQ(driver->configure_alert(
+                  static_cast<uint16_t>(ina226::AlertFlag::ALERT_ON_CONVERSION_READY), 0),
+              ESP_OK);
 
-    // Check conversion ready flag: bit 10 set in MASK_ENABLE
-    helper_mock_register_read(static_cast<uint8_t>(ina226::Register::MASK_ENABLE), (1 << 10));
-    bool ready = false;
+    // Regression: CNVR enable bit (bit 10) alone must NOT report conversion ready
+    helper_mock_register_read(static_cast<uint8_t>(ina226::Register::MASK_ENABLE),
+                              static_cast<uint16_t>(ina226::AlertFlag::ALERT_ON_CONVERSION_READY));
+    bool ready = true;
+    EXPECT_EQ(driver->is_conversion_ready(ready), ESP_OK);
+    EXPECT_FALSE(ready);
+
+    // CVRF flag (bit 3) set -> conversion ready
+    helper_mock_register_read(static_cast<uint8_t>(ina226::Register::MASK_ENABLE),
+                              static_cast<uint16_t>(ina226::AlertFlag::CONVERSION_READY));
     EXPECT_EQ(driver->is_conversion_ready(ready), ESP_OK);
     EXPECT_TRUE(ready);
 }

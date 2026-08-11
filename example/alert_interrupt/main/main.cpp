@@ -88,14 +88,14 @@ extern "C" void app_main(void)
     }
     ESP_LOGI(TAG, "INA226 driver initialized successfully!");
 
-    // 6. Configure INA226 Alert pin for CONVERSION_READY flag
-    uint16_t alert_mask = static_cast<uint16_t>(ina226::AlertFlag::CONVERSION_READY);
+    // 6. Configure INA226 Alert pin to assert (CNVR) when a conversion is ready
+    uint16_t alert_mask = static_cast<uint16_t>(ina226::AlertFlag::ALERT_ON_CONVERSION_READY);
     err = driver.configure_alert(alert_mask, 0);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to configure INA226 ALERT pin: %s", esp_err_to_name(err));
         return;
     }
-    ESP_LOGI(TAG, "INA226 ALERT pin configured for CONVERSION_READY interrupt on GPIO%d", INA_ALERT_GPIO);
+    ESP_LOGI(TAG, "INA226 ALERT pin configured to notify on conversion-ready (CNVR) on GPIO%d", INA_ALERT_GPIO);
 
     // 7. Main loop waiting for ISR semaphore notifications
     while (true) {
