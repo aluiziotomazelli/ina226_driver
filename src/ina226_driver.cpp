@@ -19,14 +19,13 @@ Ina226Driver::~Ina226Driver()
 
 esp_err_t Ina226Driver::init(i2c_master_bus_handle_t bus_handle)
 {
-    bus_handle_ = bus_handle;
     if (dev_handle_ == nullptr) {
         i2c_device_config_t dev_cfg = {};
         dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
         dev_cfg.device_address = config_.i2c_addr;
         dev_cfg.scl_speed_hz = 400000;
 
-        esp_err_t err = i2c_hal_.master_bus_add_device(bus_handle_, &dev_cfg, &dev_handle_);
+        esp_err_t err = i2c_hal_.master_bus_add_device(bus_handle, &dev_cfg, &dev_handle_);
         if (err != ESP_OK) {
             return err;
         }

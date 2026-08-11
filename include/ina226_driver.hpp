@@ -75,7 +75,6 @@ private:
     idf_hals::II2cHAL& i2c_hal_;
     Ina226Config config_;
     i2c_master_dev_handle_t dev_handle_{nullptr};
-    i2c_master_bus_handle_t bus_handle_{nullptr};
 
     float current_lsb_a_{0.000025f};
     float power_lsb_w_{0.000625f};
