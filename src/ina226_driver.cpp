@@ -130,13 +130,17 @@ esp_err_t Ina226Driver::read_bus_voltage_mv(uint16_t& out_mv)
 
 esp_err_t Ina226Driver::read_current_ma(float& out_ma)
 {
-    int32_t shunt_uv = 0;
-    esp_err_t err = read_shunt_voltage_uv(shunt_uv);
+    uint16_t raw_current = 0;
+    esp_err_t err = read_register(Register::CURRENT, raw_current);
     if (err != ESP_OK) {
         return err;
     }
 
-    out_ma = (static_cast<float>(shunt_uv) / 1000.0f) / config_.r_shunt_ohms;
+    // The chip computes current = Shunt_Voltage x CAL / 2048 (datasheet SBOS448B, eq. 7).
+    // The result is expressed in Current_LSB units, so only the scaling by
+    // current_lsb_a_ (derived from max_expected_current_a at calibration) is needed.
+    int16_t signed_raw = static_cast<int16_t>(raw_current);
+    out_ma = static_cast<float>(signed_raw) * current_lsb_a_ * 1000.0f;
     return ESP_OK;
 }
 

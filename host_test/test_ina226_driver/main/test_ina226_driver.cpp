@@ -116,13 +116,14 @@ TEST_F(Ina226DriverTest, ReadShuntVoltagePositiveAndNegative)
     EXPECT_EQ(uv, -7500);
 }
 
-TEST_F(Ina226DriverTest, ReadCurrentMaFromShuntResistor)
+TEST_F(Ina226DriverTest, ReadCurrentMaFromCurrentRegister)
 {
     driver->init(dummy_bus);
 
-    // 70000 uV (70 mV) across 0.1 ohm shunt = 700 mA (0.7 A)
-    // 70000 uV / 2.5 uV/LSB = 28000 LSB = 0x6D60
-    helper_mock_register_read(static_cast<uint8_t>(ina226::Register::SHUNT_VOLTAGE), 28000);
+    // CURRENT register (04h): chip computes current = Shunt_Voltage x CAL / 2048.
+    // With default config (R=0.1, Imax=0.8192A, CAL=2048), raw_current = raw_shunt.
+    // 28000 LSB x 25 uA = 700 mA (0.7 A)
+    helper_mock_register_read(static_cast<uint8_t>(ina226::Register::CURRENT), 28000);
 
     float current_ma = 0.0f;
     EXPECT_EQ(driver->read_current_ma(current_ma), ESP_OK);
