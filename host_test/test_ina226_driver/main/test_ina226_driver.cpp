@@ -214,19 +214,29 @@ TEST_F(Ina226DriverTest, ResetSuccessAppliesResetBitAndReappliesConfig)
 {
     driver->init(dummy_bus);
 
-    // 1st transmit: reset command (0x8000 / bit 15 set) written to CONFIG register
-    // 2nd transmit: apply_config writes new CONFIG register based on config_
-    // 3rd transmit: apply_config writes CALIBRATION register
     ::testing::InSequence seq;
 
+    // 1st: reset command (0x8000 / bit 15 set) written to CONFIG register
     EXPECT_CALL(mock_i2c, master_transmit(dummy_dev, _, 3, _))
         .WillOnce(Invoke([](i2c_master_dev_handle_t, const uint8_t* write_buf, size_t write_size, int) {
             EXPECT_EQ(write_size, 3);
             EXPECT_EQ(write_buf[0], static_cast<uint8_t>(ina226::Register::CONFIG));
             uint16_t sent_val = (static_cast<uint16_t>(write_buf[1]) << 8) | write_buf[2];
-            EXPECT_EQ(sent_val, 1 << 15); // Bit 15 set for Reset
+            EXPECT_EQ(sent_val, ina226::RESET_BIT); // Bit 15 set for Reset
             return ESP_OK;
-        }))
+        }));
+
+    // 2nd: poll the CONFIG register; RST bit self-cleared -> reset complete
+    EXPECT_CALL(mock_i2c, master_transmit_receive(dummy_dev, _, 1, _, 2, _))
+        .WillOnce(Invoke([](i2c_master_dev_handle_t, const uint8_t* write_buf, size_t, uint8_t* read_buf, size_t, int) {
+            EXPECT_EQ(write_buf[0], static_cast<uint8_t>(ina226::Register::CONFIG));
+            read_buf[0] = 0x41; // POR default CONFIG 0x4127, RST bit clear
+            read_buf[1] = 0x27;
+            return ESP_OK;
+        }));
+
+    // 3rd/4th: apply_config writes CONFIG register then CALIBRATION register
+    EXPECT_CALL(mock_i2c, master_transmit(dummy_dev, _, 3, _))
         .WillOnce(Invoke([](i2c_master_dev_handle_t, const uint8_t* write_buf, size_t write_size, int) {
             EXPECT_EQ(write_size, 3);
             EXPECT_EQ(write_buf[0], static_cast<uint8_t>(ina226::Register::CONFIG));
@@ -239,6 +249,59 @@ TEST_F(Ina226DriverTest, ResetSuccessAppliesResetBitAndReappliesConfig)
         }));
 
     EXPECT_EQ(driver->reset(), ESP_OK);
+}
+
+TEST_F(Ina226DriverTest, ResetPollsUntilRstBitClears)
+{
+    driver->init(dummy_bus);
+
+    ::testing::InSequence seq;
+
+    EXPECT_CALL(mock_i2c, master_transmit(dummy_dev, _, 3, _))
+        .WillOnce(Return(ESP_OK)); // reset write
+
+    // First two polls: RST bit still set (0x8000) -> keep polling
+    EXPECT_CALL(mock_i2c, master_transmit_receive(dummy_dev, _, 1, _, 2, _))
+        .WillOnce(Invoke([](i2c_master_dev_handle_t, const uint8_t*, size_t, uint8_t* read_buf, size_t, int) {
+            read_buf[0] = 0x80;
+            read_buf[1] = 0x00;
+            return ESP_OK;
+        }))
+        .WillOnce(Invoke([](i2c_master_dev_handle_t, const uint8_t*, size_t, uint8_t* read_buf, size_t, int) {
+            read_buf[0] = 0x80;
+            read_buf[1] = 0x00;
+            return ESP_OK;
+        }))
+        .WillOnce(Invoke([](i2c_master_dev_handle_t, const uint8_t*, size_t, uint8_t* read_buf, size_t, int) {
+            read_buf[0] = 0x41; // finally cleared (POR default)
+            read_buf[1] = 0x27;
+            return ESP_OK;
+        }));
+
+    // apply_config writes CONFIG then CALIBRATION
+    EXPECT_CALL(mock_i2c, master_transmit(dummy_dev, _, 3, _))
+        .WillOnce(Return(ESP_OK))
+        .WillOnce(Return(ESP_OK));
+
+    EXPECT_EQ(driver->reset(), ESP_OK);
+}
+
+TEST_F(Ina226DriverTest, ResetFailsIfRstBitNeverClears)
+{
+    driver->init(dummy_bus);
+
+    EXPECT_CALL(mock_i2c, master_transmit(dummy_dev, _, 3, _))
+        .WillOnce(Return(ESP_OK)); // reset write
+
+    // RST bit never self-clears; every poll returns 0x8000 -> timeout
+    EXPECT_CALL(mock_i2c, master_transmit_receive(dummy_dev, _, 1, _, 2, _))
+        .WillRepeatedly(Invoke([](i2c_master_dev_handle_t, const uint8_t*, size_t, uint8_t* read_buf, size_t, int) {
+            read_buf[0] = 0x80;
+            read_buf[1] = 0x00;
+            return ESP_OK;
+        }));
+
+    EXPECT_EQ(driver->reset(), ESP_ERR_TIMEOUT);
 }
 
 TEST_F(Ina226DriverTest, ReadPowerMwSuccess)

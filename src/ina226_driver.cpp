@@ -63,12 +63,28 @@ esp_err_t Ina226Driver::init()
 
 esp_err_t Ina226Driver::reset()
 {
-    uint16_t reset_cmd = (1 << 15);
-    esp_err_t err = write_register(Register::CONFIG, reset_cmd);
+    esp_err_t err = write_register(Register::CONFIG, RESET_BIT);
     if (err != ESP_OK) {
         return err;
     }
-    return apply_config();
+
+    // The RST bit is self-clearing (datasheet SBOS448B): it reads back '1' while
+    // the reset is in progress and '0' once the device is back to its POR state.
+    // Poll it so the config/calibration re-application below does not race with
+    // the reset. The loop is bounded to keep this RTOS-agnostic (no vTaskDelay)
+    // and to guarantee termination.
+    constexpr int kMaxResetPollAttempts = 100;
+    for (int attempt = 0; attempt < kMaxResetPollAttempts; ++attempt) {
+        uint16_t config_val = 0;
+        err = read_register(Register::CONFIG, config_val);
+        if (err != ESP_OK) {
+            return err;
+        }
+        if ((config_val & RESET_BIT) == 0) {
+            return apply_config();
+        }
+    }
+    return ESP_ERR_TIMEOUT;
 }
 
 esp_err_t Ina226Driver::set_config(const Ina226Config& new_config)

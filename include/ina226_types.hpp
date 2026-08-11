@@ -7,6 +7,7 @@ namespace ina226 {
 static constexpr uint8_t DEFAULT_I2C_ADDR = 0x40;
 static constexpr uint16_t MANUFACTURER_ID_VALUE = 0x5449; ///< "TI"
 static constexpr uint16_t DIE_ID_VALUE = 0x2260;
+static constexpr uint16_t RESET_BIT = (1 << 15); ///< RST: configuration reset bit (self-clearing)
 
 /**
  * @enum Register
