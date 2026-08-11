@@ -11,12 +11,12 @@ macro(setup_gtest_coverage PROJECT_NAME EXECUTABLE_NAME)
 
         # Set default patterns to extract coverage
         if(NOT EXTRACT_PATTERNS_${PROJECT_NAME})
-            set(EXTRACT_PATTERNS_${PROJECT_NAME} "*/time_manager/src/*" "*/time_manager/include/*")
+            set(EXTRACT_PATTERNS_${PROJECT_NAME} "*/ina226_driver/src/*" "*/ina226_driver/include/*")
         endif()
 
         # Set default patterns to remove
         if(NOT REMOVE_PATTERNS_${PROJECT_NAME})
-            set(REMOVE_PATTERNS_${PROJECT_NAME} "*/time_manager/include/interfaces/*")
+            set(REMOVE_PATTERNS_${PROJECT_NAME} "*/ina226_driver/include/interfaces/*")
         endif()
 
         # Extraction command for coverage

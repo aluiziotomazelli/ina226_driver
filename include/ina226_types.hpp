@@ -4,14 +4,14 @@
 
 namespace ina226 {
 
-static constexpr uint8_t DEFAULT_I2C_ADDR = 0x40;
-static constexpr uint16_t MANUFACTURER_ID_VALUE = 0x5449; ///< "TI"
-static constexpr uint16_t DIE_ID_VALUE = 0x2260;
-static constexpr uint16_t RESET_BIT = (1 << 15); ///< RST: configuration reset bit (self-clearing)
+static constexpr uint8_t DEFAULT_I2C_ADDR = 0x40;       ///< Default 7-bit I2C address (A0 = A1 = GND).
+static constexpr uint16_t MANUFACTURER_ID_VALUE = 0x5449; ///< Expected MANUFACTURER_ID register value ("TI").
+static constexpr uint16_t DIE_ID_VALUE = 0x2260;        ///< Expected DIE_ID register value.
+static constexpr uint16_t RESET_BIT = (1 << 15);        ///< RST: configuration reset bit (self-clearing).
 
 /**
  * @enum Register
- * @brief INA226 Register Map addresses.
+ * @brief INA226 register map (datasheet SBOS448B).
  */
 enum class Register : uint8_t
 {
@@ -43,6 +43,11 @@ enum class AveragingMode : uint16_t
     AVG_1024 = 0b111
 };
 
+/**
+ * @brief Maps an AveragingMode to the number of averaged samples.
+ * @param[in] mode Averaging mode.
+ * @return Number of samples; returns 1 for an unknown value.
+ */
 constexpr uint16_t averaging_mode_to_count(AveragingMode mode)
 {
     switch (mode) {
@@ -83,6 +88,11 @@ enum class ConversionTime : uint16_t
     CT_8244US = 0b111
 };
 
+/**
+ * @brief Maps a ConversionTime to its duration in microseconds.
+ * @param[in] ct Conversion time setting.
+ * @return Duration in us; returns 1100 us for an unknown value.
+ */
 constexpr uint32_t conversion_time_to_us(ConversionTime ct)
 {
     switch (ct) {
@@ -109,7 +119,7 @@ constexpr uint32_t conversion_time_to_us(ConversionTime ct)
 
 /**
  * @enum OperatingMode
- * @brief ADC Operating Mode.
+ * @brief ADC operating mode; matches the MODE bits (D2:D0) of the CONFIG register.
  */
 enum class OperatingMode : uint16_t
 {
@@ -125,7 +135,7 @@ enum class OperatingMode : uint16_t
 
 /**
  * @enum AlertFlag
- * @brief Bitmasks for MASK_ENABLE register.
+ * @brief Bitmasks for the MASK_ENABLE register (datasheet SBOS448B).
  */
 enum class AlertFlag : uint16_t
 {
@@ -135,25 +145,30 @@ enum class AlertFlag : uint16_t
     BUS_UNDER_VOLTAGE = (1 << 12),         ///< BUL: Bus Voltage Under-Voltage
     POWER_OVER_LIMIT = (1 << 11),          ///< POL: Power Over-Limit
     ALERT_ON_CONVERSION_READY = (1 << 10), ///< CNVR: assert Alert pin when a conversion completes
-    ALERT_FUNCTION_FLAG = (1 << 4),        ///< AFF: Alert Function Flag
-    CONVERSION_READY = (1 << 3),           ///< CVRF: conversion-ready status flag
-    ALERT_POLARITY_HIGH = (1 << 1), ///< APOL: Alert polarity; 1 = inverted (active-high), 0 = normal (active-low)
-    LATCH_ENABLE = (1 << 0)         ///< LEN: Alert latch enable
+    ALERT_FUNCTION_FLAG = (1 << 4),        ///< AFF: Alert Function Flag (read-to-clear)
+    CONVERSION_READY = (1 << 3),           ///< CVRF: conversion-ready status flag (read-to-clear)
+    ALERT_POLARITY_HIGH = (1 << 1),        ///< APOL: 1 = active-high, 0 = active-low (default)
+    LATCH_ENABLE = (1 << 0)                ///< LEN: latch the Alert pin until MASK_ENABLE is read
 };
 
 /**
  * @struct Ina226Config
- * @brief Configuration parameters for initializing INA226.
+ * @brief Configuration parameters for initializing the INA226.
+ *
+ * r_shunt_ohms and max_expected_current_a define the measurement resolution:
+ * Current_LSB = max_expected_current_a / 32768, and the resulting CALIBRATION
+ * value (CAL = 0.00512 / (Current_LSB * r_shunt_ohms)) must fit in 15 bits
+ * (see Ina226Driver::calibrate()).
  */
 struct Ina226Config
 {
-    uint8_t i2c_addr = DEFAULT_I2C_ADDR;
-    float r_shunt_ohms = 0.1f;              ///< Shunt resistor value in Ohms (e.g. 0.1 for R100)
-    float max_expected_current_a = 0.8192f; ///< Max expected current in Amperes
-    AveragingMode avg_mode = AveragingMode::AVG_16;
-    ConversionTime vbus_ct = ConversionTime::CT_1100US;
-    ConversionTime vsh_ct = ConversionTime::CT_1100US;
-    OperatingMode mode = OperatingMode::SHUNT_AND_BUS_CONTINUOUS;
+    uint8_t i2c_addr = DEFAULT_I2C_ADDR;              ///< 7-bit I2C device address.
+    float r_shunt_ohms = 0.1f;                        ///< Shunt resistance in Ohms (e.g. 0.1 for R100).
+    float max_expected_current_a = 0.8192f;           ///< Maximum expected current in Amperes (defines Current_LSB / CAL).
+    AveragingMode avg_mode = AveragingMode::AVG_16;   ///< Samples averaged per conversion.
+    ConversionTime vbus_ct = ConversionTime::CT_1100US; ///< VBUS conversion time.
+    ConversionTime vsh_ct = ConversionTime::CT_1100US; ///< VSHUNT conversion time.
+    OperatingMode mode = OperatingMode::SHUNT_AND_BUS_CONTINUOUS; ///< ADC operating mode.
 };
 
 } // namespace ina226

@@ -1,0 +1,39 @@
+# INA226 Driver Component Manifest
+version: "0.1.0"
+description: "A lightweight, dependency-injected C++ driver for the TI INA226 bi-directional current/power monitor for ESP-IDF."
+maintainers:
+  - "Aluizio Tomazelli <aluiziotomazelli@gmail.com>"
+
+license: "MIT"
+
+tags:
+  - i2c
+  - ina226
+  - current
+  - power
+  - sensor
+  - monitor
+  - esp32
+  - cpp
+
+targets:
+  - esp32
+  - esp32s2
+  - esp32s3
+  - esp32c3
+  - linux
+
+dependencies:
+  idf: ">=5.1"
+
+files:
+  use_gitignore: true
+  exclude:
+    - "example/**/*"
+    - "host_test/**/*"
+    - "test_apps/**/*"
+    - "mocks/**/*"
+    - ".gitignore"
+
+url: "https://github.com/aluiziotomazelli/ina226_driver"
+repository: "https://github.com/aluiziotomazelli/ina226_driver.git"
