@@ -11,9 +11,9 @@
 
 static const char* TAG = "INA226_ALERT_EXAMPLE";
 
-static constexpr gpio_num_t I2C_SDA_GPIO = GPIO_NUM_6;    // D4
-static constexpr gpio_num_t I2C_SCL_GPIO = GPIO_NUM_7;    // D5
-static constexpr gpio_num_t INA_ALERT_GPIO = GPIO_NUM_10; // D10
+static constexpr gpio_num_t I2C_SDA_GPIO = GPIO_NUM_6;   // D4
+static constexpr gpio_num_t I2C_SCL_GPIO = GPIO_NUM_7;   // D5
+static constexpr gpio_num_t INA_ALERT_GPIO = GPIO_NUM_3; // D10
 
 static SemaphoreHandle_t alert_semaphore = nullptr;
 
@@ -97,6 +97,12 @@ extern "C" void app_main(void)
     }
     ESP_LOGI(TAG, "INA226 ALERT pin configured to notify on conversion-ready (CNVR) on GPIO%d", INA_ALERT_GPIO);
 
+    // Clear any stale alert flags (AFF/CVRF are read-to-clear). The ALERT pin
+    // only deasserts after MASK/ENABLE is read, so this also releases the pin
+    // if a previous firmware left it asserted (datasheet SBOS448B).
+    uint16_t alert_flags = 0;
+    driver.read_alert_flags(alert_flags);
+
     // 7. Main loop waiting for ISR semaphore notifications
     while (true) {
         if (xSemaphoreTake(alert_semaphore, portMAX_DELAY) == pdTRUE) {
@@ -120,6 +126,13 @@ extern "C" void app_main(void)
             else {
                 ESP_LOGE(TAG, "Error reading INA226 sensors on alert interrupt!");
             }
+
+            // CRITICAL: with CNVR, the ALERT pin stays asserted until MASK/ENABLE
+            // is read (datasheet SBOS448B). read_alert_flags() returns the flags
+            // and clears them, so the pin can re-assert on the next conversion
+            // (~1 Hz). Without this, the pin stays LOW and the loop blocks forever
+            // on the semaphore.
+            driver.read_alert_flags(alert_flags);
         }
     }
 }

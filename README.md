@@ -13,7 +13,7 @@ A lightweight, modular, and dependency-injected C++ driver for the **Texas Instr
 - **Bidirectional Measurements**: Reads shunt voltage (uV), bus voltage (mV), current (mA), and power (mW) with datasheet-correct LSB scaling.
 - **Calibration Validation**: Rejects calibration values that do not fit the 15 writeable bits of the CALIBRATION register (max `0x7FFF`), preventing silent truncation.
 - **Self-Clearing Soft Reset**: Polls the RST bit until the device returns to its power-on state before re-applying configuration (bounded loop, RTOS-agnostic, no task delays).
-- **Configurable Alerts**: Writes ALERT_LIMIT and MASK_ENABLE from `AlertFlag` bitmasks, including the conversion-ready flag (CVRF) for asynchronous data-ready polling.
+- **Configurable Alerts**: Writes ALERT_LIMIT and MASK_ENABLE from `AlertFlag` bitmasks, including the conversion-ready flag (CVRF) for asynchronous data-ready polling. `read_alert_flags()` reads and clears the MASK_ENABLE flags, which is required to re-arm the ALERT pin when using CNVR.
 - **Runtime Reconfiguration**: `set_config()` applies new settings on the fly without re-initializing the device.
 - **Host Testing**: Includes a GoogleTest/GoogleMock suite executable on Linux host with coverage reports.
 
@@ -133,6 +133,20 @@ if (driver.is_conversion_ready(ready) == ESP_OK && ready) {
 }
 ```
 
+### 5. Acknowledge an Alert (re-arm the ALERT pin)
+
+With `ALERT_ON_CONVERSION_READY` (CNVR) the ALERT pin is asserted on every
+conversion completion and stays asserted until MASK_ENABLE is read.
+`read_alert_flags()` returns the flags and clears them, so the pin can re-assert
+on the next conversion:
+
+```cpp
+uint16_t flags = 0;
+if (driver.read_alert_flags(flags) == ESP_OK) {
+    // flags contains the raw MASK_ENABLE value (e.g. CVRF bit 3 set).
+}
+```
+
 ---
 
 ## Examples
@@ -150,3 +164,7 @@ if (driver.is_conversion_ready(ready) == ESP_OK && ready) {
 - **RTOS-agnostic core**: The driver performs blocking I2C transfers and never calls task-delay APIs, so it can be used from any thread or event context.
 - **I2C speed**: The device is registered on the bus at 400 kHz (fast mode).
 - **Documentation**: See [`API.md`](API.md) for the full programming interface reference.
+
+## References
+
+- [INA226 Datasheet (TI SBOS448B)](https://www.ti.com/document-viewer/ina226/datasheet) - register map and electrical characteristics used throughout this component.

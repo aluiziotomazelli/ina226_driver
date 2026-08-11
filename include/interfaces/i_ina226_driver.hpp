@@ -114,6 +114,10 @@ public:
      * given AlertFlag bitmask. The ALERT pin is open-drain and active-low by
      * default (APOL = 0); it asserts while any enabled alert condition is true
      * (or stays asserted until MASK_ENABLE is read when LEN = 1).
+     *
+     * Note: when ALERT_ON_CONVERSION_READY (CNVR) is enabled, the ALERT pin is
+     * asserted on every conversion completion and only deasserts after MASK_ENABLE
+     * is read. Acknowledge the alert with read_alert_flags() to re-arm the pin.
      * @param[in] alert_mask Bitmask of AlertFlag values (e.g. SHUNT_OVER_VOLTAGE).
      * @param[in] alert_limit Raw threshold value for the ALERT_LIMIT register.
      * @return ESP_OK on success, or ESP_ERR_* on I2C failure.
@@ -121,10 +125,24 @@ public:
     virtual esp_err_t configure_alert(uint16_t alert_mask, uint16_t alert_limit) = 0;
 
     /**
+     * @brief Reads and clears the alert flags in the MASK_ENABLE register.
+     *
+     * Reads MASK_ENABLE (06h) and returns the raw 16-bit value. Because AFF
+     * (bit 4) and CVRF (bit 3) are read-to-clear (datasheet SBOS448B), this call
+     * also deasserts the ALERT pin and re-arms the next alert condition. This is
+     * required when using ALERT_ON_CONVERSION_READY (CNVR): the pin stays
+     * asserted until MASK_ENABLE is read.
+     * @param[out] out_flags Raw MASK_ENABLE value (AlertFlag bitmask) after the read.
+     * @return ESP_OK on success, or ESP_ERR_* on I2C failure.
+     */
+    virtual esp_err_t read_alert_flags(uint16_t& out_flags) = 0;
+
+    /**
      * @brief Checks the conversion-ready flag (CVRF) in the MASK_ENABLE register.
      *
      * CVRF (bit 3) is set when a new conversion completes and is cleared when
-     * MASK_ENABLE is read (datasheet SBOS448B).
+     * MASK_ENABLE is read (datasheet SBOS448B). Internally uses read_alert_flags(),
+     * so it also clears the flags and deasserts the ALERT pin.
      * @param[out] out_ready Set to true when a new measurement is available.
      * @return ESP_OK on success, or ESP_ERR_* on I2C failure.
      */

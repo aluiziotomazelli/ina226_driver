@@ -191,13 +191,20 @@ Recomputes and writes the CALIBRATION register. `Current_LSB = max_expected_curr
 
 #### `virtual esp_err_t configure_alert(uint16_t alert_mask, uint16_t alert_limit) = 0`
 Configures the alert threshold and the MASK_ENABLE bits. Writes ALERT_LIMIT (07h) with `alert_limit`, then MASK_ENABLE (06h) with the given `AlertFlag` bitmask. The ALERT pin is open-drain and active-low by default (APOL = 0); it asserts while any enabled alert condition is true (or stays asserted until MASK_ENABLE is read when LEN = 1).
+
+Note: when `ALERT_ON_CONVERSION_READY` (CNVR) is enabled, the ALERT pin is asserted on every conversion completion and only deasserts after MASK_ENABLE is read. Acknowledge the alert with `read_alert_flags()` to re-arm the pin.
 - **Parameters**:
   - `alert_mask` - Bitmask of `AlertFlag` values (e.g. `SHUNT_OVER_VOLTAGE`).
   - `alert_limit` - Raw threshold value for the ALERT_LIMIT register.
 - **Returns**: `ESP_OK` on success, or `ESP_ERR_*` on I2C failure.
 
+#### `virtual esp_err_t read_alert_flags(uint16_t& out_flags) = 0`
+Reads and clears the alert flags in the MASK_ENABLE register. Reads MASK_ENABLE (06h) and returns the raw 16-bit value. Because AFF (bit 4) and CVRF (bit 3) are read-to-clear (datasheet SBOS448B), this call also deasserts the ALERT pin and re-arms the next alert condition. This is required when using `ALERT_ON_CONVERSION_READY` (CNVR): the pin stays asserted until MASK_ENABLE is read.
+- **Parameters**: `out_flags` - Raw MASK_ENABLE value (`AlertFlag` bitmask) after the read.
+- **Returns**: `ESP_OK` on success, or `ESP_ERR_*` on I2C failure.
+
 #### `virtual esp_err_t is_conversion_ready(bool& out_ready) = 0`
-Checks the conversion-ready flag (CVRF) in the MASK_ENABLE register. CVRF (bit 3) is set when a new conversion completes and is cleared when MASK_ENABLE is read (datasheet SBOS448B).
+Checks the conversion-ready flag (CVRF) in the MASK_ENABLE register. CVRF (bit 3) is set when a new conversion completes and is cleared when MASK_ENABLE is read (datasheet SBOS448B). Internally uses `read_alert_flags()`, so it also clears the flags and deasserts the ALERT pin.
 - **Parameters**: `out_ready` - Set to true when a new measurement is available.
 - **Returns**: `ESP_OK` on success, or `ESP_ERR_*` on I2C failure.
 

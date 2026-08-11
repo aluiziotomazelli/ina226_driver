@@ -180,10 +180,18 @@ esp_err_t Ina226Driver::configure_alert(uint16_t alert_mask, uint16_t alert_limi
     return write_register(Register::MASK_ENABLE, alert_mask);
 }
 
+esp_err_t Ina226Driver::read_alert_flags(uint16_t& out_flags)
+{
+    // Reading MASK_ENABLE (06h) returns the raw alert flags and, because AFF/CVRF
+    // are read-to-clear (datasheet SBOS448B), also deasserts the ALERT pin and
+    // re-arms the next alert. With CNVR the pin stays asserted until this read.
+    return read_register(Register::MASK_ENABLE, out_flags);
+}
+
 esp_err_t Ina226Driver::is_conversion_ready(bool& out_ready)
 {
     uint16_t mask_val = 0;
-    esp_err_t err = read_register(Register::MASK_ENABLE, mask_val);
+    esp_err_t err = read_alert_flags(mask_val);
     if (err != ESP_OK) {
         return err;
     }

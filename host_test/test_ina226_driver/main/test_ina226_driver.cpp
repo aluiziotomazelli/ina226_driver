@@ -176,6 +176,49 @@ TEST_F(Ina226DriverTest, ConfigureAlertAndCheckConversionReady)
     EXPECT_TRUE(ready);
 }
 
+TEST_F(Ina226DriverTest, ReadAlertFlagsReturnsRawMaskEnableValue)
+{
+    driver->init(dummy_bus);
+
+    // CVRF (bit 3) + AFF (bit 4) + CNVR (bit 10) set -> the raw MASK_ENABLE
+    // value is returned unchanged (the register is read-to-clear on the chip).
+    uint16_t expected_flags = static_cast<uint16_t>(ina226::AlertFlag::ALERT_ON_CONVERSION_READY) |
+                              static_cast<uint16_t>(ina226::AlertFlag::ALERT_FUNCTION_FLAG) |
+                              static_cast<uint16_t>(ina226::AlertFlag::CONVERSION_READY);
+    helper_mock_register_read(static_cast<uint8_t>(ina226::Register::MASK_ENABLE), expected_flags);
+
+    uint16_t flags = 0;
+    EXPECT_EQ(driver->read_alert_flags(flags), ESP_OK);
+    EXPECT_EQ(flags, expected_flags);
+}
+
+TEST_F(Ina226DriverTest, ReadAlertFlagsReturnsZeroWhenNoFlagIsSet)
+{
+    driver->init(dummy_bus);
+
+    helper_mock_register_read(static_cast<uint8_t>(ina226::Register::MASK_ENABLE), 0);
+
+    uint16_t flags = 0xFFFF;
+    EXPECT_EQ(driver->read_alert_flags(flags), ESP_OK);
+    EXPECT_EQ(flags, 0);
+}
+
+TEST_F(Ina226DriverTest, ReadAlertFlagsPropagatesI2cError)
+{
+    driver->init(dummy_bus);
+
+    // The mock returns ESP_FAIL when the register pointer does not match the
+    // expected MASK_ENABLE, which also proves the correct register is read.
+    EXPECT_CALL(mock_i2c, master_transmit_receive(dummy_dev, _, 1, _, 2, _))
+        .WillOnce(Invoke([](i2c_master_dev_handle_t, const uint8_t* write_buf, size_t, uint8_t*, size_t, int) {
+            EXPECT_EQ(write_buf[0], static_cast<uint8_t>(ina226::Register::MASK_ENABLE));
+            return ESP_FAIL;
+        }));
+
+    uint16_t flags = 0;
+    EXPECT_EQ(driver->read_alert_flags(flags), ESP_FAIL);
+}
+
 TEST_F(Ina226DriverTest, SetConfigSavesConfigurationAndApplysIt)
 {
     driver->init(dummy_bus);

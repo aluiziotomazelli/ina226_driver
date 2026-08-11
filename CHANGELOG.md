@@ -2,6 +2,12 @@
 
 All notable changes to the `ina226_driver` component will be documented in this file.
 
+## [0.2.0] - 2026-08-10
+
+### Added
+- `IIna226Driver::read_alert_flags()` to read and clear the MASK_ENABLE flags. Because AFF/CVRF are read-to-clear (datasheet SBOS448B), it deasserts the ALERT pin and re-arms the next alert — the required acknowledgement when using `ALERT_ON_CONVERSION_READY` (CNVR), replacing the previous manual `read_register(MASK_ENABLE)` pattern.
+- `Ina226Driver::is_conversion_ready()` now internally uses `read_alert_flags()` (behavior unchanged: still reads MASK_ENABLE and reports the CVRF bit).
+
 ## [0.1.0] - 2026-08-10
 
 ### Added

@@ -16,6 +16,7 @@ public:
     MOCK_METHOD(esp_err_t, read_power_mw, (float& out_mw), (override));
     MOCK_METHOD(esp_err_t, calibrate, (float r_shunt_ohms, float max_expected_current_a), (override));
     MOCK_METHOD(esp_err_t, configure_alert, (uint16_t alert_mask, uint16_t alert_limit), (override));
+    MOCK_METHOD(esp_err_t, read_alert_flags, (uint16_t& out_flags), (override));
     MOCK_METHOD(esp_err_t, is_conversion_ready, (bool& out_ready), (override));
     MOCK_METHOD(const Ina226Config&, get_config, (), (const, override));
 };

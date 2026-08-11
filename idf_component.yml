@@ -1,5 +1,5 @@
 # INA226 Driver Component Manifest
-version: "0.1.0"
+version: "0.2.0"
 description: "A lightweight, dependency-injected C++ driver for the TI INA226 bi-directional current/power monitor for ESP-IDF."
 maintainers:
   - "Aluizio Tomazelli <aluiziotomazelli@gmail.com>"

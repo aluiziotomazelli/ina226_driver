@@ -54,6 +54,9 @@ public:
     /** @copydoc IIna226Driver::configure_alert() */
     esp_err_t configure_alert(uint16_t alert_mask, uint16_t alert_limit) override;
 
+    /** @copydoc IIna226Driver::read_alert_flags() */
+    esp_err_t read_alert_flags(uint16_t& out_flags) override;
+
     /** @copydoc IIna226Driver::is_conversion_ready() */
     esp_err_t is_conversion_ready(bool& out_ready) override;
 

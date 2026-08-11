@@ -144,8 +144,8 @@ void enter_deep_sleep()
     // 3. Clear any stale alert flag. The MASK_ENABLE flags (AFF/CVRF) are
     //    read-to-clear; in transparent mode the pin itself is not latched, it
     //    already tracks the current condition.
-    uint16_t mask_enable_val = 0;
-    driver.read_register(ina226::Register::MASK_ENABLE, mask_enable_val);
+    uint16_t alert_flags = 0;
+    driver.read_alert_flags(alert_flags);
 
     // 4. Sanity check: the pin must be HIGH (alert de-asserted) right before
     //    sleeping. With a level-triggered LOW wakeup, entering sleep while the
@@ -248,12 +248,14 @@ extern "C" void app_main(void)
     }
     ESP_LOGI(TAG, "INA226 driver initialized successfully!");
 
-    // Clear any previous alert flag from INA226 by reading MASK_ENABLE upon
-    // wakeup (AFF/CVRF are read-to-clear).
-    uint16_t mask_enable_val = 0;
-    driver.read_register(ina226::Register::MASK_ENABLE, mask_enable_val);
+    driver.set_config(config);
+
+    // Clear any previous alert flag from INA226 upon wakeup: read_alert_flags()
+    // reads MASK_ENABLE, whose AFF/CVRF flags are read-to-clear.
+    uint16_t alert_flags = 0;
+    driver.read_alert_flags(alert_flags);
     ESP_LOGI(
-        TAG, "MASK_ENABLE: 0x%04X (ALERT pin level after clear: %d)", mask_enable_val, gpio_get_level(INA_ALERT_GPIO));
+        TAG, "MASK_ENABLE: 0x%04X (ALERT pin level after clear: %d)", alert_flags, gpio_get_level(INA_ALERT_GPIO));
 
     // Main polling loop
     while (true) {
