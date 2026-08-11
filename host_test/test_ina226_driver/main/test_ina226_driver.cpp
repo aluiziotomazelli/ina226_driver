@@ -256,3 +256,43 @@ TEST_F(Ina226DriverTest, ReadPowerMwSuccess)
     EXPECT_EQ(driver->read_power_mw(power_mw), ESP_OK);
     EXPECT_NEAR(power_mw, 625.0f, 0.01f);
 }
+
+TEST_F(Ina226DriverTest, CalibrateWritesCalibrationRegisterWithComputedValue)
+{
+    driver->init(dummy_bus);
+
+    // r_shunt_ohms = 0.1, max_expected_current_a = 0.8192
+    // current_lsb = 0.8192 / 32768 = 25 uA (0.000025 A)
+    // CAL = 0.00512 / (0.000025 * 0.1) = 2048
+    EXPECT_CALL(mock_i2c, master_transmit(dummy_dev, _, 3, _))
+        .WillOnce(Invoke([](i2c_master_dev_handle_t, const uint8_t* write_buf, size_t, int) {
+            EXPECT_EQ(write_buf[0], static_cast<uint8_t>(ina226::Register::CALIBRATION));
+            uint16_t cal = (static_cast<uint16_t>(write_buf[1]) << 8) | write_buf[2];
+            EXPECT_EQ(cal, 2048);
+            return ESP_OK;
+        }));
+
+    EXPECT_EQ(driver->calibrate(0.1f, 0.8192f), ESP_OK);
+
+    ina226::Ina226Config cfg = driver->get_config();
+    EXPECT_EQ(cfg.r_shunt_ohms, 0.1f);
+    EXPECT_EQ(cfg.max_expected_current_a, 0.8192f);
+}
+
+TEST_F(Ina226DriverTest, CalibrateRejectsValueOverflowingCalibrationRegister)
+{
+    driver->init(dummy_bus);
+
+    // r_shunt_ohms = 0.001, max_expected_current_a = 1.0
+    // current_lsb = 1.0 / 32768 = 30.5 uA
+    // CAL = 0.00512 / (30.5e-6 * 0.001) = 167772 > 0x7FFF (15-bit limit)
+    // Must be rejected without any I2C write to the CALIBRATION register.
+    EXPECT_CALL(mock_i2c, master_transmit(dummy_dev, _, 3, _)).Times(0);
+
+    EXPECT_EQ(driver->calibrate(0.001f, 1.0f), ESP_ERR_INVALID_ARG);
+
+    // Configuration must remain unchanged after a rejected calibration
+    ina226::Ina226Config cfg = driver->get_config();
+    EXPECT_EQ(cfg.r_shunt_ohms, 0.1f);
+    EXPECT_EQ(cfg.max_expected_current_a, 0.8192f);
+}

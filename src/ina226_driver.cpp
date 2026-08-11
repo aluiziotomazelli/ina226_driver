@@ -83,13 +83,21 @@ esp_err_t Ina226Driver::calibrate(float r_shunt_ohms, float max_expected_current
         return ESP_ERR_INVALID_ARG;
     }
 
+    const float current_lsb_a = max_expected_current_a / 32768.0f;
+    const double cal = 0.00512 / (static_cast<double>(current_lsb_a) * static_cast<double>(r_shunt_ohms));
+
+    // The Calibration register only has 15 writeable bits (D14:D0), so the value
+    // must fit in [0, 0x7FFF] (datasheet SBOS448B). Anything larger would be
+    // silently truncated by the uint16_t cast, corrupting current/power readings.
+    if (cal > static_cast<double>(0x7FFF)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     config_.r_shunt_ohms = r_shunt_ohms;
     config_.max_expected_current_a = max_expected_current_a;
 
-    current_lsb_a_ = max_expected_current_a / 32768.0f;
+    current_lsb_a_ = current_lsb_a;
     power_lsb_w_ = 25.0f * current_lsb_a_;
-
-    double cal = 0.00512 / (static_cast<double>(current_lsb_a_) * static_cast<double>(r_shunt_ohms));
     cal_val_ = static_cast<uint16_t>(std::trunc(cal));
 
     return write_register(Register::CALIBRATION, cal_val_);
