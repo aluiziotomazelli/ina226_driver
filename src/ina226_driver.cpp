@@ -37,10 +37,10 @@ esp_err_t Ina226Driver::init(i2c_master_bus_handle_t bus_handle)
             return err;
         }
     }
-    return init();
+    return verify_and_configure();
 }
 
-esp_err_t Ina226Driver::init()
+esp_err_t Ina226Driver::verify_and_configure()
 {
     if (dev_handle_ == nullptr) {
         return ESP_ERR_INVALID_STATE;

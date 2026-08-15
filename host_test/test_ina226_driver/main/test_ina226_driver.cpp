@@ -414,7 +414,7 @@ TEST_F(Ina226DriverTest, DeinitSuccessRemovesDeviceAndResetsHandle)
     EXPECT_EQ(driver->deinit(), ESP_OK);
 
     // Subsequent operations requiring dev_handle should fail with ESP_ERR_INVALID_STATE
-    EXPECT_EQ(driver->init(), ESP_ERR_INVALID_STATE);
+    EXPECT_EQ(driver->reset(), ESP_ERR_INVALID_STATE);
 
     // Calling deinit again should be a safe no-op
     EXPECT_EQ(driver->deinit(), ESP_OK);

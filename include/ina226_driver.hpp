@@ -27,9 +27,6 @@ public:
     /** @copydoc IIna226Driver::init(i2c_master_bus_handle_t) */
     esp_err_t init(i2c_master_bus_handle_t bus_handle) override;
 
-    /** @copydoc IIna226Driver::init() */
-    esp_err_t init() override;
-
     /** @copydoc IIna226Driver::deinit() */
     esp_err_t deinit() override;
 
@@ -95,7 +92,8 @@ private:
     float power_lsb_w_{0.000625f};   ///< Power LSB in Watts (= 25 * current_lsb_a_).
     uint16_t cal_val_{2048};         ///< CALIBRATION register value.
 
-    esp_err_t apply_config(); ///< Writes CONFIG + CALIBRATION registers from config_.
+    esp_err_t verify_and_configure(); ///< Verifies chip IDs and writes active configuration.
+    esp_err_t apply_config();          ///< Writes CONFIG + CALIBRATION registers from config_.
 };
 
 } // namespace ina226

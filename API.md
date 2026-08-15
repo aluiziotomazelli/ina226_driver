@@ -145,13 +145,13 @@ Configuration parameters for initializing the INA226. `r_shunt_ohms` and `max_ex
 Defined in `ina226_driver/include/interfaces/i_ina226_driver.hpp`.
 
 #### `virtual esp_err_t init(i2c_master_bus_handle_t bus_handle) = 0`
-Adds the INA226 device to an initialized I2C master bus and performs hardware initialization (chip ID verification + configuration write). This is the entry point for normal use; it internally calls `init()` after registering the device on the bus.
+Adds the INA226 device to an initialized I2C master bus and performs hardware initialization (chip ID verification + configuration write). This is the entry point for normal use.
 - **Parameters**: `bus_handle` - Initialized I2C master bus handle.
 - **Returns**: `ESP_OK` on success, or `ESP_ERR_*` on I2C failure / ID mismatch.
 
-#### `virtual esp_err_t init() = 0`
-Verifies the INA226 chip IDs and writes the current configuration. Requires the device to be registered on a bus first (see `init(bus_handle)`).
-- **Returns**: `ESP_OK` on success, `ESP_ERR_INVALID_STATE` if no device is registered, `ESP_ERR_NOT_FOUND` if the manufacturer ID does not match, `ESP_ERR_INVALID_RESPONSE` if the die ID does not match, or `ESP_ERR_*` on I2C failure.
+#### `virtual esp_err_t deinit() = 0`
+Removes the device from the I2C master bus and releases driver resources. Safe to call multiple times.
+- **Returns**: `ESP_OK` on success, or `ESP_ERR_*` on I2C removal failure.
 
 #### `virtual esp_err_t reset() = 0`
 Performs a soft reset of the INA226 registers. Polls the self-clearing RST bit (datasheet SBOS448B) until it reads back 0, then re-applies the active configuration and calibration.

@@ -31,17 +31,6 @@ public:
     virtual esp_err_t init(i2c_master_bus_handle_t bus_handle) = 0;
 
     /**
-     * @brief Verifies the INA226 chip IDs and writes the current configuration.
-     *
-     * Requires the device to be registered on a bus first (see init(bus_handle)).
-     * @return ESP_OK on success, ESP_ERR_INVALID_STATE if no device is registered,
-     *         ESP_ERR_NOT_FOUND if the manufacturer ID does not match,
-     *         ESP_ERR_INVALID_RESPONSE if the die ID does not match,
-     *         or ESP_ERR_* on I2C failure.
-     */
-    virtual esp_err_t init() = 0;
-
-    /**
      * @brief Removes the device from the I2C master bus and releases driver resources.
      *
      * Calls i2c_master_bus_rm_device() and resets internal device handles.
