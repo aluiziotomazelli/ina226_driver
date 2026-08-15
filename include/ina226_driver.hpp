@@ -30,6 +30,9 @@ public:
     /** @copydoc IIna226Driver::init() */
     esp_err_t init() override;
 
+    /** @copydoc IIna226Driver::deinit() */
+    esp_err_t deinit() override;
+
     /** @copydoc IIna226Driver::reset() */
     esp_err_t reset() override;
 

@@ -403,3 +403,36 @@ TEST_F(Ina226DriverTest, CalibrateRejectsValueOverflowingCalibrationRegister)
     EXPECT_EQ(cfg.r_shunt_ohms, 0.1f);
     EXPECT_EQ(cfg.max_expected_current_a, 0.8192f);
 }
+
+TEST_F(Ina226DriverTest, DeinitSuccessRemovesDeviceAndResetsHandle)
+{
+    driver->init(dummy_bus);
+
+    EXPECT_CALL(mock_i2c, master_bus_rm_device(dummy_dev))
+        .WillOnce(Return(ESP_OK));
+
+    EXPECT_EQ(driver->deinit(), ESP_OK);
+
+    // Subsequent operations requiring dev_handle should fail with ESP_ERR_INVALID_STATE
+    EXPECT_EQ(driver->init(), ESP_ERR_INVALID_STATE);
+
+    // Calling deinit again should be a safe no-op
+    EXPECT_EQ(driver->deinit(), ESP_OK);
+}
+
+TEST_F(Ina226DriverTest, DeinitWhenNotInitializedReturnsOk)
+{
+    EXPECT_CALL(mock_i2c, master_bus_rm_device(_)).Times(0);
+    EXPECT_EQ(driver->deinit(), ESP_OK);
+}
+
+TEST_F(Ina226DriverTest, DeinitPropagatesRmDeviceError)
+{
+    driver->init(dummy_bus);
+
+    EXPECT_CALL(mock_i2c, master_bus_rm_device(dummy_dev))
+        .WillOnce(Return(ESP_ERR_INVALID_STATE));
+
+    EXPECT_EQ(driver->deinit(), ESP_ERR_INVALID_STATE);
+}
+

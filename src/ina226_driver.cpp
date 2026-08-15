@@ -11,10 +11,17 @@ Ina226Driver::Ina226Driver(idf_hals::II2cHAL& i2c_hal, const Ina226Config& confi
 
 Ina226Driver::~Ina226Driver()
 {
+    deinit();
+}
+
+esp_err_t Ina226Driver::deinit()
+{
     if (dev_handle_ != nullptr) {
-        i2c_hal_.master_bus_rm_device(dev_handle_);
+        esp_err_t err = i2c_hal_.master_bus_rm_device(dev_handle_);
         dev_handle_ = nullptr;
+        return err;
     }
+    return ESP_OK;
 }
 
 esp_err_t Ina226Driver::init(i2c_master_bus_handle_t bus_handle)

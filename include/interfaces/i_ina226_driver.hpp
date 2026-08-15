@@ -42,6 +42,15 @@ public:
     virtual esp_err_t init() = 0;
 
     /**
+     * @brief Removes the device from the I2C master bus and releases driver resources.
+     *
+     * Calls i2c_master_bus_rm_device() and resets internal device handles.
+     * Safe to call multiple times or when uninitialized.
+     * @return ESP_OK on success, or ESP_ERR_* on I2C removal failure.
+     */
+    virtual esp_err_t deinit() = 0;
+
+    /**
      * @brief Performs a soft reset of the INA226 registers.
      *
      * Polls the self-clearing RST bit (datasheet SBOS448B) until it reads back 0,
